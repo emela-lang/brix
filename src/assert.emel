@@ -1,0 +1,125 @@
+-- Assertions for `@test` functions (spec 0040). Each assertion is an ordinary
+-- function that throws `AssertError` on failure: the runner's whole contract
+-- with this module is "an uncaught throw fails the test" (0040 B1/C4), so brix
+-- has no compiler privileges and any library can replace it.
+--
+-- brix tests itself: the `@test` functions below live beside the API (0040 T7)
+-- and run with `emela test`.
+
+module assert
+
+-- The error every assertion throws. Its `Show` impl is what renders the
+-- failure detail in the runner's report (spec 0040 C7).
+pub enum AssertError {
+    Failed(String)
+}
+
+impl Show for AssertError {
+    fn to_string(e: AssertError) -> String uses {} {
+        match e {
+            AssertError::Failed(message) -> "assertion failed: " ++ message
+        }
+    }
+}
+
+-- Fails unless `actual` equals `expected`, rendering both sides.
+pub fn eq<T: Eq + Show>(actual: T, expected: T) -> Unit throws AssertError uses {} {
+    if actual == expected {
+        ()
+    } else {
+        throw AssertError::Failed(
+            "expected `" ++ expected.to_string() ++ "`, got `" ++ actual.to_string() ++ "`",
+        )
+    }
+}
+
+-- Fails when `actual` equals `unexpected`.
+pub fn ne<T: Eq + Show>(actual: T, unexpected: T) -> Unit throws AssertError uses {} {
+    if actual == unexpected {
+        throw AssertError::Failed("expected a value other than `" ++ unexpected.to_string() ++ "`")
+    } else {
+        ()
+    }
+}
+
+-- Fails unless `condition` holds.
+pub fn ok(condition: Bool) -> Unit throws AssertError uses {} {
+    if condition {
+        ()
+    } else {
+        throw AssertError::Failed("expected the condition to hold")
+    }
+}
+
+-- Fails unconditionally with `message`.
+pub fn fail(message: String) -> Unit throws AssertError uses {} {
+    throw AssertError::Failed(message)
+}
+
+@test
+fn eq_accepts_equal_values() -> Unit uses {} {
+    eq(2 + 2, 4)
+    eq("a" ++ "b", "ab")
+    eq(true, true)
+}
+
+@test
+fn eq_reports_both_sides() -> Unit uses {} {
+    let message = try {
+        eq(1, 2)
+        "did not throw"
+    } catch {
+        AssertError::Failed(text) -> text
+    }
+    eq(message, "expected `2`, got `1`")
+}
+
+@test
+fn ne_accepts_different_values() -> Unit uses {} {
+    ne(1, 2)
+    ne("a", "b")
+}
+
+@test
+fn ne_rejects_equal_values() -> Unit uses {} {
+    let message = try {
+        ne(3, 3)
+        "did not throw"
+    } catch {
+        AssertError::Failed(text) -> text
+    }
+    eq(message, "expected a value other than `3`")
+}
+
+@test
+fn ok_accepts_true() -> Unit uses {} {
+    ok(true)
+}
+
+@test
+fn ok_rejects_false() -> Unit uses {} {
+    let message = try {
+        ok(false)
+        "did not throw"
+    } catch {
+        AssertError::Failed(text) -> text
+    }
+    eq(message, "expected the condition to hold")
+}
+
+@test
+fn fail_always_throws() -> Unit uses {} {
+    let message = try {
+        fail("boom")
+        "did not throw"
+    } catch {
+        AssertError::Failed(text) -> text
+    }
+    eq(message, "boom")
+}
+
+@test
+fn show_prefixes_the_report() -> Unit uses {} {
+    let error = AssertError::Failed("boom")
+    eq(error.to_string(), "assertion failed: boom")
+}
