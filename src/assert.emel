@@ -10,6 +10,6 @@ pub fn some[A](value: Option[A]) -> A {
 pub fn none[A](value: Option[A]) -> () {
   value match {
     None    -> ()
-    Some(x) -> panic("Assert.none: expected None, got Some(#{x})")
+    Some(x) -> panic("Assert.none: expected None, got Some(#{inspect(x)})")
   }
 }

@@ -51,7 +51,7 @@ fn run_cases[A, E, R](
           info,
         )
         panic(
-          "Property failed (#{info})\noriginal: #{tree.value}\ncounterexample: #{smallest.value}\nshrink_attempts=#{tried} limit=#{config.shrink_limit}\n#{reason}",
+          "Property failed (#{info})\noriginal: #{inspect(tree.value)}\ncounterexample: #{inspect(smallest.value)}\nshrink_attempts=#{tried} limit=#{config.shrink_limit}\n#{reason}",
         )
       }
     }
