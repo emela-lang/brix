@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: emela-lang/setup-emela@v1
+        with:
+          version: 0.23.0
+      # The JS target runs the tests with node.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install
+        run: emela pome install
+      - name: Format
+        run: emela fmt --check
+      - name: Check
+        run: emela check
+      # WASM is left out until the WASM target supports `Fiber.attempt`, which `Property` uses.
+      - name: Test on JS and C
+        run: |
+          for target in js c; do
+            out="$(emela test --target "$target")"
+            echo "$out"
+            # A compiler that does not read `test/` would pass with no tests.
+            if echo "$out" | grep -q '^running 0 tests'; then
+              echo "::error::no tests ran on $target"
+              exit 1
+            fi
+          done
