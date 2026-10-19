@@ -1,81 +1,80 @@
 # brix
 
-Assertions for Emela's unit tests (spec 0040), distributed as a **Pome** (spec
-0032).
+Test helpers for Emela, distributed as a Pome: checks for Option values and property-based testing
+with shrinking.
 
-Named after **°Brix** — the scale a grower uses to measure a fruit's sugar
-content: how you judge the quality of a Pome.
+Named after **°Brix**, the scale a grower uses to measure a fruit's sugar content: how you judge
+the quality of a Pome.
 
-- **Source path:** `github.com/emela-lang/brix`
-- **Import root:** `brix` (the source-path leaf; no `[pome].module` override)
-- **Requires:** emela ≥ 0.6 (`@test` and `emela test`, specs 0039/0040)
+- Source path: `github.com/emela-lang/brix`
+- Root name: `Brix`
+- Requires: emela 0.22.0 or newer
 
 ## Usage
 
-Add brix as a development-time dependency (spec 0040 D1). It resolves for
-`check` / `lint` / LSP / `test`, and the compiler rejects any build artifact
-that would reach it (D4) — brix never becomes a runtime dependency of your
-Pome:
+Add brix as a dependency used only by the tests (`[dev-dependencies]`):
 
 ```console
 $ emela pome add --dev github:emela-lang/brix
 ```
 
-Write tests next to the code they check (spec 0040 T7) — same file, so private
-functions are testable by bare name — and run them:
+A `[dev-dependencies]` Pome can only be imported from the test root `test/`, which `emela test`
+and `emela check` read and `emela build` does not. Put the tests that use brix under `test/`:
 
 ```emela
-module rle
-
-import brix.assert
-
-fn run_length(s: String) -> Int uses {} {
-    ...
-}
+# test/sort_test.emel
+import Brix.Pbt.Gen
+import Brix.Pbt.Property
+import Sort
 
 @test
-fn empty_input_has_zero_runs() -> Unit uses {} {
-    assert.eq(run_length(""), 0)
+fn sort_keeps_the_length() {
+  Property.check(Gen.list(Gen.int()), fn(xs) {
+    assert List.length(Sort.sort(xs)) == List.length(xs)
+  })
 }
 ```
 
 ```console
 $ emela test
 running 1 test
-test rle.empty_input_has_zero_runs ... ok
+test SortTest.sort_keeps_the_length ... ok
 
-test result: ok. 1 passed; 0 failed
+test result: ok. 1 passed; 0 failed; 0 filtered out
 ```
 
-A `@test` body is an implicit-try scope (spec 0040 T3): a failed assertion
-throws, the throw propagates as the test's failure at that point, and no `?`
-is needed. The runner knows nothing about this library beyond "an uncaught
-throw fails the test" (B1/C4); the `Show` impl on `AssertError` is what renders
-the failure detail (C7):
+A failing property is shrunk to a smaller counterexample, and the test fails with the seed to
+reproduce it:
 
 ```text
----- rle.empty_input_has_zero_runs ----
-threw AssertError: assertion failed: expected `0`, got `1`
+defect: Property failed (seed=20261013 case=9 case_seed=292983060 size=9)
+original: [-854397770, -2143511092, -2141573835]
+counterexample: [0, 0, 0]
+shrink_attempts=9 limit=1000
+defect: assertion failed: List.length(xs) < 3
+  left: 3
+ right: 3
 ```
 
-## API (module `brix.assert`)
+(for `assert List.length(xs) < 3`)
 
-| Function | Fails when |
+## Modules
+
+| Module | Contents |
 |---|---|
-| `eq<T: Eq + Show>(actual, expected)` | the values differ |
-| `ne<T: Eq + Show>(actual, unexpected)` | the values are equal |
-| `ok(condition)` | the condition is false |
-| `fail(message)` | always |
+| `Brix.Assert` | `some(value)` returns the contents of `Some` and fails on `None`; `none(value)` fails on `Some`, showing its contents |
+| `Brix.Pbt.Gen` | `Gen[A]` generators and their shrink trees: `int`, `int_between`, `constant`, `map`, `pair`, `list`, and `sample` to run one |
+| `Brix.Pbt.Property` | `check(gen, f)` runs `f` on generated values; `check_with(gen, config, f)` with a `Config` (`seed`, `cases`, `max_size`, `shrink_limit`) |
 
-Every assertion returns `Unit` and `throws AssertError`; brix is pure Emela
-with no compiler privileges, so alternative assertion libraries compose the
-same way.
+Generators are pure values driven by a seed (xorshift32), so a run is the same on every target and
+every time. An error or a defect in `f` fails the case; a failing generator is reported apart from
+a failing property.
 
 ## Testing
 
-brix tests itself with its own assertions — the `@test` functions live beside
-the API in `src/assert.emel`:
+brix tests itself with the tests under `test/`:
 
 ```console
 $ emela test
+$ emela test --target c
 ```
