@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: emela-lang/setup-emela@v1
         with:
-          version: 0.23.0
+          version: 0.24.0
       # The JS target runs the tests with node.
       - uses: actions/setup-node@v4
         with:

@@ -8,7 +8,7 @@ the quality of a Pome.
 
 - Source path: `github.com/emela-lang/brix`
 - Root name: `Brix`
-- Requires: emela 0.23.0 or newer
+- Requires: emela 0.24.0 or newer
 
 ## Usage
 
