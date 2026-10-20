@@ -7,7 +7,7 @@ pub fn some[A](value: Option[A]) -> A {
 }
 
 ## Requires None; displays the unexpected contents of Some.
-pub fn none[A](value: Option[A]) -> () {
+pub fn none[A: Show](value: Option[A]) -> () {
   value match {
     None    -> ()
     Some(x) -> panic("Assert.none: expected None, got Some(#{inspect(x)})")

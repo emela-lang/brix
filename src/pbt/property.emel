@@ -10,11 +10,12 @@ pub fn config() -> Config {
   Config(seed: 20261013, cases: 100, max_size: 100, shrink_limit: 1000)
 }
 
-pub fn check[A, E, R](gen: Gen[A], f: fn(A) -> () fails E use R) -> () use R {
+pub fn check[A: Show, E, R](gen: Gen[A], f: fn(A) -> () fails E use R) -> () use R {
   check_with(gen, config(), f)
 }
 
-pub fn check_with[A, E, R](gen: Gen[A], config: Config, f: fn(A) -> () fails E use R) -> () use R {
+pub fn check_with[A: Show, E, R](gen: Gen[A], config: Config, f: fn(A) -> () fails E use R) -> ()
+  use R {
   if config.cases <= 0 || config.max_size < 0 || config.max_size > 1000 || config.shrink_limit < 0 {
     panic("Property: invalid config (cases > 0, max_size in 0..1000, shrink_limit >= 0 required)")
   }
@@ -25,7 +26,7 @@ fn context(config: Config, seed: Int, index: Int, size: Int) -> String {
   "seed=#{config.seed} case=#{index} case_seed=#{seed} size=#{size}"
 }
 
-fn run_cases[A, E, R](
+fn run_cases[A: Show, E, R](
   gen: Gen[A],
   config: Config,
   f: fn(A) -> () fails E use R,
