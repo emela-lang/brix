@@ -8,7 +8,7 @@ the quality of a Pome.
 
 - Source path: `github.com/emela-lang/brix`
 - Root name: `Brix`
-- Requires: emela 0.27.0 or newer
+- Requires: emela 0.29.0 or newer
 
 ## Usage
 
@@ -76,5 +76,5 @@ brix tests itself with the tests under `test/`:
 
 ```console
 $ emela test
-$ emela test --target c
+$ emela test --target native
 ```
