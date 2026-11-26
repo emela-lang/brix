@@ -40,8 +40,9 @@ fn core_and_std_laws() {
   Property.check(Gen.int_between(-1000, 1000), |n| {
     # The state is freshly installed for EVERY trial (including shrinking).
     (value, last) = State.run(0, || {
-      (use State[Int]).set(n)
-      (use State[Int]).get()
+      state <- State[Int]
+      state.set(n)
+      state.get()
     })
     assert value == n
     assert last == n
@@ -150,7 +151,8 @@ fn size_schedule_and_budget() {
   cfg = Property.Config(seed: 0, cases: 5, max_size: 2, shrink_limit: 1)
   (_, sizes) = State.run([], || {
     Property.check_with(sized, cfg, |n| {
-      (use State[List[Int]]).update(|xs| List.append(xs, [n]))
+      state <- State[List[Int]]
+      state.update(|xs| List.append(xs, [n]))
     })
   })
   assert sizes == [0, 1, 2, 0, 1]
